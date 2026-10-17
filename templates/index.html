@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | IIoT Threat Detection Framework{% endblock %}
+{% block heading %}Security Operations Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Top Stat Metric Cards -->
+    <div class="metrics-grid">
+        <div class="metric-card metric-total">
+            <div class="metric-header">
+                <span class="metric-label">Total Logs Analyzed</span>
+                <span class="metric-icon">📑</span>
+            </div>
+            <div class="metric-value">{{ metrics.total_logs | default(0) }}</div>
+            <div class="metric-subtext">Telemetry &amp; events captured</div>
+        </div>
+
+        <div class="metric-card metric-normal">
+            <div class="metric-header">
+                <span class="metric-label">Normal Operations</span>
+                <span class="metric-icon">✅</span>
+            </div>
+            <div class="metric-value">{{ metrics.normal_events | default(0) }}</div>
+            <div class="metric-subtext">Standard operating baseline</div>
+        </div>
+
+        <div class="metric-card metric-suspicious">
+            <div class="metric-header">
+                <span class="metric-label">Suspicious Events</span>
+                <span class="metric-icon">⚠️</span>
+            </div>
+            <div class="metric-value">{{ metrics.suspicious_events | default(0) }}</div>
+            <div class="metric-subtext">Flagged for investigation</div>
+        </div>
+
+        <div class="metric-card metric-high">
+            <div class="metric-header">
+                <span class="metric-label">High-Risk Alerts</span>
+                <span class="metric-icon">🔥</span>
+            </div>
+            <div class="metric-value">{{ metrics.high_risk_alerts | default(0) }}</div>
+            <div class="metric-subtext">Significant anomalies &amp; scans</div>
+        </div>
+
+        <div class="metric-card metric-critical">
+            <div class="metric-header">
+                <span class="metric-label">Critical Alerts</span>
+                <span class="metric-icon">🚨</span>
+            </div>
+            <div class="metric-value">{{ metrics.critical_alerts | default(0) }}</div>
+            <div class="metric-subtext">Immediate triage required</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-grid">
+        <div class="cyber-card chart-card">
+            <div class="card-header">
+                <h3 class="card-title">Threat Risk Distribution</h3>
+                <span class="badge badge-subtle">By Severity</span>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="riskDistributionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="cyber-card chart-card">
+            <div class="card-header">
+                <h3 class="card-title">Security Health Ratio</h3>
+                <span class="badge badge-subtle">Normal vs Flagged</span>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="healthRatioChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Suspicious Activities Table Section -->
+    <div class="cyber-card table-card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Recent Suspicious Activities</h3>
+                <p class="card-description">Latest detected industrial anomalies, brute-force bursts, and policy violations</p>
+            </div>
+            <div class="card-actions">
+                <a href="{{ url_for('threats_view') }}" class="btn btn-outline btn-sm">View All Threats &rarr;</a>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="cyber-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Device ID</th>
+                        <th>Source IP</th>
+                        <th>Event Type</th>
+                        <th>Failed Logins</th>
+                        <th>Network Traffic</th>
+                        <th>Risk Level</th>
+                        <th>Detection Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if metrics.recent_threats %}
+                        {% for threat in metrics.recent_threats %}
+                            <tr>
+                                <td class="text-mono">{{ threat.timestamp }}</td>
+                                <td><span class="device-tag">{{ threat.device_id }}</span></td>
+                                <td class="text-mono">{{ threat.source_ip }}</td>
+                                <td><span class="event-tag">{{ threat.event_type }}</span></td>
+                                <td>
+                                    {% if threat.failed_logins > 0 %}
+                                        <span class="text-warning font-bold">{{ threat.failed_logins }}</span>
+                                    {% else %}
+                                        <span>0</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ "{:,.1f}".format(threat.network_traffic) }} KB</td>
+                                <td>
+                                    <span class="badge badge-{{ threat.risk_level | lower }}">
+                                        {{ threat.risk_level }}
+                                    </span>
+                                </td>
+                                <td class="reason-cell">
+                                    <span class="reason-text" title="{{ threat.detection_reason }}">{{ threat.detection_reason }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="empty-table-state">
+                                <div class="empty-box">
+                                    <span class="empty-icon">🛡️</span>
+                                    <h4>No Threats Detected Yet</h4>
+                                    <p>Get started by uploading an IIoT CSV log file or loading the synthetic sample dataset.</p>
+                                    <div class="empty-actions">
+                                        <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-sm">Upload CSV Logs</a>
+                                        <a href="{{ url_for('load_sample_data') }}" class="btn btn-secondary btn-sm">Load Sample Dataset</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pass server-rendered metric variables to client-side Chart.js
+    window.dashboardMetrics = {
+        totalLogs: {{ metrics.total_logs | default(0) }},
+        normalEvents: {{ metrics.normal_events | default(0) }},
+        suspiciousEvents: {{ metrics.suspicious_events | default(0) }},
+        criticalAlerts: {{ metrics.critical_alerts | default(0) }},
+        highAlerts: {{ metrics.high_risk_alerts | default(0) }},
+        mediumAlerts: {{ metrics.medium_risk_alerts | default(0) }},
+        lowAlerts: {{ metrics.low_risk_alerts | default(0) }}
+    };
+</script>
+{% endblock %}
+

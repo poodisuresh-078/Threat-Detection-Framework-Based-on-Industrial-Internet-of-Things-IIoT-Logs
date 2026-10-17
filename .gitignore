@@ -1,0 +1,38 @@
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python Bytecode and Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# SQLite Databases & Local Storage
+*.db
+*.sqlite3
+instance/
+
+# Sensitive Environment Configurations
+.env
+.env.local
+
+# Temporary Upload Files
+uploads/
+*.log
+
+# IDE and OS Specific Files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}IIoT Threat Detection Framework{% endblock %}</title>
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="cyber-theme">
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-badge">
+                    <span class="shield-icon">🛡️</span>
+                    <div>
+                        <h1 class="logo-title">IIoT Sentinel</h1>
+                        <span class="logo-subtitle">Threat Detection Engine</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="{{ url_for('upload_page') }}" class="nav-item {% if request.endpoint == 'upload_page' %}active{% endif %}">
+                    <span class="nav-icon">📤</span>
+                    <span class="nav-text">Upload Logs</span>
+                </a>
+                <a href="{{ url_for('logs_view') }}" class="nav-item {% if request.endpoint == 'logs_view' %}active{% endif %}">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">All Logs</span>
+                </a>
+                <a href="{{ url_for('threats_view') }}" class="nav-item {% if request.endpoint == 'threats_view' %}active{% endif %}">
+                    <span class="nav-icon">⚠️</span>
+                    <span class="nav-text">Threat Management</span>
+                </a>
+                <a href="{{ url_for('reports_view') }}" class="nav-item {% if request.endpoint == 'reports_view' %}active{% endif %}">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-text">Reports & Analytics</span>
+                </a>
+                <a href="{{ url_for('export_threats_csv') }}" class="nav-item export-item">
+                    <span class="nav-icon">💾</span>
+                    <span class="nav-text">Export CSV</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-status-card">
+                <div class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span class="status-text">Engine: Active</span>
+                </div>
+                <div class="status-details">
+                    <small>ML: Isolation Forest</small>
+                    <small>Storage: SQLite WAL</small>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Layout -->
+        <main class="main-wrapper">
+            <!-- Header Bar -->
+            <header class="top-navbar">
+                <div class="navbar-left">
+                    <button class="mobile-menu-toggle" id="menuToggle" aria-label="Toggle navigation">☰</button>
+                    <h2 class="page-heading">{% block heading %}Threat Intelligence Dashboard{% endblock %}</h2>
+                </div>
+                <div class="navbar-right">
+                    <a href="{{ url_for('upload_page') }}" class="btn btn-outline btn-sm">+ Ingest New Logs</a>
+                    <a href="{{ url_for('load_sample_data') }}" class="btn btn-secondary btn-sm" title="Quick-load sample_logs.csv into database">⚡ Load Sample Data</a>
+                </div>
+            </header>
+
+            <!-- Important Security Disclaimer Notice -->
+            <div class="disclaimer-banner">
+                <span class="disclaimer-icon">ℹ️</span>
+                <div class="disclaimer-text">
+                    <strong>Operational Cybersecurity Advisory:</strong> This framework identifies rule-based policy breaches and statistical anomalies via Isolation Forest. Flagged alerts require formal triage and human verification before confirming a cyberattack.
+                </div>
+            </div>
+
+            <!-- Flash Notification Messages -->
+            <div class="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                <span class="alert-text">{{ message }}</span>
+                                <button class="alert-close" onclick="this.parentElement.remove();">&times;</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Page Specific Body Content -->
+            <div class="content-body">
+                {% block content %}{% endblock %}
+            </div>
+
+            <!-- Footer -->
+            <footer class="app-footer">
+                <div class="footer-info">
+                    <span>Industrial Internet of Things (IIoT) Threat Detection System</span>
+                    <span class="footer-separator">•</span>
+                    <span>MCA Final Project &amp; Security Portfolio</span>
+                </div>
+                <div class="footer-tech">
+                    <span class="tech-pill">Python 3</span>
+                    <span class="tech-pill">Flask</span>
+                    <span class="tech-pill">Isolation Forest</span>
+                    <span class="tech-pill">SQLite</span>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Application JavaScript -->
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+

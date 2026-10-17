@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Reports &amp; Analytics | IIoT Threat Detection Framework{% endblock %}
+{% block heading %}Security Assessment &amp; Threat Reports{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <!-- Executive Summary Card -->
+    <div class="cyber-card summary-card">
+        <div class="summary-header">
+            <div>
+                <h3 class="card-title">Executive Threat Summary</h3>
+                <p class="card-description">Automated cyber threat evaluation across industrial endpoints and SCADA networks</p>
+            </div>
+            <div class="summary-actions">
+                <a href="{{ url_for('export_threats_csv') }}" class="btn btn-primary btn-sm">💾 Export Suspicious Logs (CSV)</a>
+                <button onclick="window.print()" class="btn btn-outline btn-sm">🖨️ Print / Save Report</button>
+            </div>
+        </div>
+
+        <div class="summary-stats-grid">
+            <div class="summary-stat-box">
+                <span class="stat-num">{{ reports.total_logs | default(0) }}</span>
+                <span class="stat-title">Total Logs Ingested</span>
+            </div>
+            <div class="summary-stat-box">
+                <span class="stat-num text-success">{{ reports.normal_events | default(0) }}</span>
+                <span class="stat-title">Normal Baseline Logs</span>
+            </div>
+            <div class="summary-stat-box">
+                <span class="stat-num text-danger">{{ reports.suspicious_events | default(0) }}</span>
+                <span class="stat-title">Total Flagged Threats</span>
+            </div>
+            <div class="summary-stat-box">
+                <span class="stat-num text-critical">{{ reports.critical_count | default(0) }}</span>
+                <span class="stat-title">Critical Severity Alerts</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Charts Row -->
+    <div class="charts-grid">
+        <div class="cyber-card chart-card">
+            <div class="card-header">
+                <h3 class="card-title">Threat Classification by Severity</h3>
+                <span class="badge badge-subtle">Risk Tiers</span>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="reportRiskChart"></canvas>
+            </div>
+        </div>
+
+        <div class="cyber-card chart-card">
+            <div class="card-header">
+                <h3 class="card-title">Top Industrial Attack Vectors</h3>
+                <span class="badge badge-subtle">Event Signatures</span>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="reportEventsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Threat Source Breakdown Tables Grid -->
+    <div class="breakdown-grid">
+        <!-- Top Targeted Devices -->
+        <div class="cyber-card">
+            <div class="card-header">
+                <h3 class="card-title">Top 5 Targeted Industrial Devices</h3>
+                <span class="badge badge-subtle">Device ID</span>
+            </div>
+            <div class="table-responsive">
+                <table class="cyber-table">
+                    <thead>
+                        <tr>
+                            <th>Device Identifier</th>
+                            <th>Alert Incidents</th>
+                            <th>Threat Vulnerability</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if reports.top_devices %}
+                            {% for dev in reports.top_devices %}
+                                <tr>
+                                    <td><span class="device-tag">{{ dev.device_id }}</span></td>
+                                    <td class="font-bold">{{ dev.alert_count }}</td>
+                                    <td>
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar" style="width: {{ (dev.alert_count / (reports.suspicious_events or 1) * 100) | round }}%;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="3" class="text-center text-muted">No device data available.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Top Suspicious Source IPs -->
+        <div class="cyber-card">
+            <div class="card-header">
+                <h3 class="card-title">Top 5 Suspicious Source IPs</h3>
+                <span class="badge badge-subtle">Origin Network</span>
+            </div>
+            <div class="table-responsive">
+                <table class="cyber-table">
+                    <thead>
+                        <tr>
+                            <th>Source IP Address</th>
+                            <th>Flagged Packets</th>
+                            <th>Incident Share</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if reports.top_ips %}
+                            {% for ip in reports.top_ips %}
+                                <tr>
+                                    <td class="text-mono ip-cell">{{ ip.source_ip }}</td>
+                                    <td class="font-bold">{{ ip.alert_count }}</td>
+                                    <td>
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar bar-danger" style="width: {{ (ip.alert_count / (reports.suspicious_events or 1) * 100) | round }}%;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="3" class="text-center text-muted">No IP data available.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.reportsData = {
+        totalLogs: {{ reports.total_logs | default(0) }},
+        normalEvents: {{ reports.normal_events | default(0) }},
+        suspiciousEvents: {{ reports.suspicious_events | default(0) }},
+        criticalCount: {{ reports.critical_count | default(0) }},
+        highCount: {{ reports.high_count | default(0) }},
+        mediumCount: {{ reports.medium_count | default(0) }},
+        lowCount: {{ reports.low_count | default(0) }},
+        eventLabels: [{% for ev in reports.threat_events %}"{{ ev.event_type }}",{% endfor %}],
+        eventCounts: [{% for ev in reports.threat_events %}{{ ev.count }},{% endfor %}]
+    };
+</script>
+{% endblock %}
+

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Analyzed Logs | IIoT Threat Detection Framework{% endblock %}
+{% block heading %}Ingested IIoT Telemetry Logs{% endblock %}
+
+{% block content %}
+<div class="logs-container">
+    <div class="cyber-card">
+        <!-- Filter and Search Toolbar -->
+        <div class="toolbar-header">
+            <div class="toolbar-left">
+                <h3 class="card-title">Telemetry &amp; Security Logs</h3>
+                <span class="badge badge-subtle">{{ total_count }} Records Found</span>
+            </div>
+
+            <form method="GET" action="{{ url_for('logs_view') }}" class="filter-form">
+                <div class="form-group-inline">
+                    <label for="riskFilter">Risk Level:</label>
+                    <select name="risk" id="riskFilter" class="form-control-sm" onchange="this.form.submit()">
+                        <option value="All" {% if selected_risk == 'All' %}selected{% endif %}>All Records</option>
+                        <option value="Normal" {% if selected_risk == 'Normal' %}selected{% endif %}>Normal Only</option>
+                        <option value="Low" {% if selected_risk == 'Low' %}selected{% endif %}>Low Risk</option>
+                        <option value="Medium" {% if selected_risk == 'Medium' %}selected{% endif %}>Medium Risk</option>
+                        <option value="High" {% if selected_risk == 'High' %}selected{% endif %}>High Risk</option>
+                        <option value="Critical" {% if selected_risk == 'Critical' %}selected{% endif %}>Critical</option>
+                    </select>
+                </div>
+
+                <div class="form-group-inline search-group">
+                    <input type="text" name="search" value="{{ search_query | default('') }}" placeholder="Search device, IP, event..." class="form-control-sm">
+                    <button type="submit" class="btn btn-outline btn-sm">Search</button>
+                    {% if selected_risk != 'All' or search_query %}
+                        <a href="{{ url_for('logs_view') }}" class="btn btn-subtle btn-sm">Reset</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <!-- Logs Table -->
+        <div class="table-responsive">
+            <table class="cyber-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Timestamp</th>
+                        <th>Device ID</th>
+                        <th>Source IP</th>
+                        <th>Event Type</th>
+                        <th>Failed Logins</th>
+                        <th>Traffic (KB)</th>
+                        <th>Status</th>
+                        <th>Risk Level</th>
+                        <th>Detection Analysis</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if logs %}
+                        {% for log in logs %}
+                            <tr class="{% if log.is_suspicious %}row-suspicious{% endif %}">
+                                <td class="text-mono">#{{ log.id }}</td>
+                                <td class="text-mono">{{ log.timestamp }}</td>
+                                <td><span class="device-tag">{{ log.device_id }}</span></td>
+                                <td class="text-mono">{{ log.source_ip }}</td>
+                                <td><span class="event-tag">{{ log.event_type }}</span></td>
+                                <td>
+                                    {% if log.failed_logins > 0 %}
+                                        <span class="text-warning font-bold">{{ log.failed_logins }}</span>
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                </td>
+                                <td>{{ "{:,.1f}".format(log.network_traffic) }}</td>
+                                <td>
+                                    <span class="status-pill status-{{ log.status | lower }}">{{ log.status }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ log.risk_level | lower }}">{{ log.risk_level }}</span>
+                                </td>
+                                <td class="reason-cell">
+                                    <span class="reason-text" title="{{ log.detection_reason }}">{{ log.detection_reason }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="10" class="empty-table-state">
+                                <div class="empty-box">
+                                    <span class="empty-icon">📂</span>
+                                    <h4>No Log Records Match Query</h4>
+                                    <p>Try resetting filters or upload a new IIoT CSV log file.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

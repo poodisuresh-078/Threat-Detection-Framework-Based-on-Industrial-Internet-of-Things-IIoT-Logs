@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Threat Management | IIoT Threat Detection Framework{% endblock %}
+{% block heading %}Threat Management &amp; Incident Triage{% endblock %}
+
+{% block content %}
+<div class="threats-container">
+    <div class="cyber-card">
+        <!-- Threat Management Toolbar -->
+        <div class="toolbar-header">
+            <div class="toolbar-left">
+                <h3 class="card-title">Flagged Threat Alerts</h3>
+                <span class="badge badge-warning">{{ threats | length }} Incidents Identified</span>
+            </div>
+
+            <form method="GET" action="{{ url_for('threats_view') }}" class="filter-form">
+                <div class="form-group-inline">
+                    <label for="threatRiskFilter">Risk Filter:</label>
+                    <select name="risk" id="threatRiskFilter" class="form-control-sm" onchange="this.form.submit()">
+                        <option value="All" {% if selected_risk == 'All' %}selected{% endif %}>All Threat Levels</option>
+                        <option value="Critical" {% if selected_risk == 'Critical' %}selected{% endif %}>🚨 Critical Alerts</option>
+                        <option value="High" {% if selected_risk == 'High' %}selected{% endif %}>🔥 High Risk</option>
+                        <option value="Medium" {% if selected_risk == 'Medium' %}selected{% endif %}>⚠️ Medium Risk</option>
+                        <option value="Low" {% if selected_risk == 'Low' %}selected{% endif %}>ℹ️ Low Risk</option>
+                    </select>
+                </div>
+
+                <div class="form-group-inline search-group">
+                    <input type="text" name="search" value="{{ search_query | default('') }}" placeholder="Search Device ID or Source IP..." class="form-control-sm">
+                    <button type="submit" class="btn btn-outline btn-sm">Filter</button>
+                    {% if selected_risk != 'All' or search_query %}
+                        <a href="{{ url_for('threats_view') }}" class="btn btn-subtle btn-sm">Clear</a>
+                    {% endif %}
+                </div>
+                <a href="{{ url_for('export_threats_csv') }}" class="btn btn-primary btn-sm">💾 Export Threats CSV</a>
+            </form>
+        </div>
+
+        <!-- Threats Table -->
+        <div class="table-responsive">
+            <table class="cyber-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Device ID</th>
+                        <th>Source IP</th>
+                        <th>Event Type</th>
+                        <th>Failed Logins</th>
+                        <th>Traffic (KB)</th>
+                        <th>Engine Flags</th>
+                        <th>Risk Level</th>
+                        <th>Detection Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if threats %}
+                        {% for threat in threats %}
+                            <tr class="row-threat row-{{ threat.risk_level | lower }}">
+                                <td class="text-mono">{{ threat.timestamp }}</td>
+                                <td><span class="device-tag">{{ threat.device_id }}</span></td>
+                                <td class="text-mono ip-cell">{{ threat.source_ip }}</td>
+                                <td><span class="event-tag">{{ threat.event_type }}</span></td>
+                                <td>
+                                    {% if threat.failed_logins >= 5 %}
+                                        <span class="badge badge-critical">{{ threat.failed_logins }} Failed</span>
+                                    {% elif threat.failed_logins > 0 %}
+                                        <span class="badge badge-warning">{{ threat.failed_logins }} Failed</span>
+                                    {% else %}
+                                        <span class="text-muted">0</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ "{:,.1f}".format(threat.network_traffic) }}</td>
+                                <td>
+                                    <div class="engine-pills">
+                                        {% if threat.rule_flagged %}
+                                            <span class="pill-rule" title="Detected via heuristic security rule">Rule</span>
+                                        {% endif %}
+                                        {% if threat.ml_flagged %}
+                                            <span class="pill-ml" title="Detected via Isolation Forest anomaly detector">ML</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ threat.risk_level | lower }}">{{ threat.risk_level }}</span>
+                                </td>
+                                <td class="reason-cell">
+                                    <span class="reason-text-full">{{ threat.detection_reason }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="empty-table-state">
+                                <div class="empty-box">
+                                    <span class="empty-icon">🛡️</span>
+                                    <h4>No Threats Match Current Filter</h4>
+                                    <p>Try switching the risk level filter or clearing the search query.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

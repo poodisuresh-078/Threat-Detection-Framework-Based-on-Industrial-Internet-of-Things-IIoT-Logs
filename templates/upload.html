@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Upload IIoT Logs | Threat Detection Framework{% endblock %}
+{% block heading %}Log Ingestion &amp; Threat Analysis{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <div class="upload-grid">
+        <!-- Upload Form Card -->
+        <div class="cyber-card upload-form-card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Upload Industrial Log File</h3>
+                    <p class="card-description">Select an IIoT CSV log file for automated cybersecurity analysis</p>
+                </div>
+                <span class="badge badge-primary">CSV Only</span>
+            </div>
+
+            <form action="{{ url_for('upload_page') }}" method="POST" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+                <div class="dropzone" id="dropzone">
+                    <input type="file" name="log_file" id="logFileInput" accept=".csv" class="file-input" required>
+                    <div class="dropzone-content">
+                        <span class="upload-icon">📁</span>
+                        <h4 class="dropzone-title">Drag &amp; Drop CSV File Here</h4>
+                        <p class="dropzone-subtitle">or <span class="highlight-link">browse from your computer</span></p>
+                        <span class="file-limits">Maximum file size: 16 MB • Format: .CSV</span>
+                        <div id="selectedFileName" class="selected-file-display" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+                        <span class="btn-icon">⚡</span> Run Threat Analysis
+                    </button>
+                </div>
+            </form>
+
+            <div class="quick-sample-box">
+                <div class="quick-sample-header">
+                    <span>Quick Evaluation Mode:</span>
+                </div>
+                <p>Don't have a dataset ready? Load the pre-configured synthetic IIoT industrial dataset with 130 records covering sensor telemetry, brute-force attacks, port scans, and DDoS events.</p>
+                <a href="{{ url_for('load_sample_data') }}" class="btn btn-secondary btn-sm">
+                    🚀 Load Sample IIoT Dataset (sample_logs.csv)
+                </a>
+            </div>
+        </div>
+
+        <!-- Schema and Guidelines Card -->
+        <div class="cyber-card info-card">
+            <div class="card-header">
+                <h3 class="card-title">Required CSV Schema</h3>
+                <span class="badge badge-subtle">Specification</span>
+            </div>
+
+            <p class="schema-intro">The ingested CSV file must contain the following 7 columns (case-insensitive):</p>
+
+            <div class="schema-list">
+                <div class="schema-item">
+                    <div class="schema-item-header">
+                        <code>timestamp</code>
+                        <span class="type-pill">String / DateTime</span>
+                    </div>
+                    <span class="schema-desc">Standard ISO/UTC or YYYY-MM-DD HH:MM:SS format.</span>
+                </div>
+
+                <div class="schema-item">
+                    <div class="schema-item-header">
+                        <code>device_id</code>
+                        <span class="type-pill">String</span>
+                    </div>
+                    <span class="schema-desc">Unique identifier for industrial controller (e.g. PLC-01, SCADA-RTU-04).</span>
+                </div>
+
+                <div class="schema-item">
+                    <div class="schema-item-header">
+                        <code>source_ip</code>
+                        <span class="type-pill">IPv4 String</span>
+                    </div>
+                    <span class="schema-desc">Originating IP address transmitting packets or commands.</span>
+                </div>
+
+                <div class="schema-item">
+                    <div class="schema-item-header">
+                        <code>event_type</code>
+                        <span class="type-pill">String</span>
+                    </div>
+                    <span class="schema-desc">Industrial event description (e.g. telemetry_read, brute_force_login, port_scan).</span>
+                </div>
+
+                <div class="schema-item">
+                    <div class="schema-item-header">
+                        <code>failed_logins</code>
+                        <span class="type-pill">Integer</span>
+                    </div>
+                    <span class="schema-desc">Consecutive failed authentication attempts registered (>= 0).</span>
+                </div>
+
+                <div class="schema-item">
+                    <div class="schema-item-header">
+                        <code>network_traffic</code>
+                        <span class="type-pill">Float / KB</span>
+                    </div>
+                    <span class="schema-desc">Total transmitted network payload in Kilobytes (KB).</span>
+                </div>
+
+                <div class="schema-item">
+                    <div class="schema-item-header">
+                        <code>status</code>
+                        <span class="type-pill">String</span>
+                    </div>
+                    <span class="schema-desc">Operation outcome status (success, normal, failed, timeout, rejected, error).</span>
+                </div>
+            </div>
+
+            <div class="schema-sample-preview">
+                <h5>Sample Row Preview:</h5>
+                <pre><code>2026-03-10 08:00:15,PLC-MODBUS-01,192.168.10.15,telemetry_read,0,45.2,success</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // File input drag & drop and name display
+    const fileInput = document.getElementById('logFileInput');
+    const dropzone = document.getElementById('dropzone');
+    const selectedFileName = document.getElementById('selectedFileName');
+
+    fileInput.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+            selectedFileName.textContent = 'Selected: ' + this.files[0].name + ' (' + (this.files[0].size / 1024).toFixed(1) + ' KB)';
+            selectedFileName.style.display = 'block';
+        }
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+        });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            selectedFileName.textContent = 'Selected: ' + e.dataTransfer.files[0].name + ' (' + (e.dataTransfer.files[0].size / 1024).toFixed(1) + ' KB)';
+            selectedFileName.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}
+
